@@ -45,6 +45,7 @@
   function saveUserInfo( $fullname, $phone, $email, $location, $password, $photourl, $mosquename, $mosquecat ){
     try{
       global $dbh;
+      $password = password_hash($password, PASSWORD_DEFAULT);
       $cArray = array('fullname'=>$fullname, 'displayname'=>$fullname, 'phone'=>$phone, 'email'=>$email, 'location'=>$location, 'password'=>$password, 'photourl'=>$photourl);
       $wArray = '';
       $lastId = $dbh->insert('tblusers', $cArray, $wArray)->getLastInsertId();

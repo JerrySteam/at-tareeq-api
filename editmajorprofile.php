@@ -4,58 +4,26 @@
   
   //echo var_dump($_POST)."==========".var_dump($_FILES);
 
-  $fullname = cleanInput($_POST['fullname']);
-  $phone = cleanInput($_POST['phone']);
-  $email = cleanInput($_POST['email']);
-  $location = cleanInput($_POST['location']);
-  $password = cleanInput($_POST['password']);
-  $cpassword = cleanInput($_POST['cpassword']);
+  $userid = cleanInput($_POST['userid']);
+  $mosquelocation = cleanInput($_POST['mosquelocation']);
+  $mosquename = cleanInput($_POST['mosquename']);
   
-  if ($fullname === "" ||
-      $phone === "" ||
-      $password === "" ||
-      $password === "" ||
-      $cpassword === ""
-  ){
+  if ($userid === "" || $mosquelocation === "" || $mosquename === ""){
     echo outputInJSON(false, "Please enter all required fields");
-  } else if ($password !== $cpassword) {
-    echo outputInJSON(false, "Password and confirm password do not match");
-  } else if ($email !== "" && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo outputInJSON(false, "Please enter a valid email address");
   } else {
-    if (isset($_POST['photo'])){
-      $photourl = getServerHost()."/attareeq/api/uploads/default.jpg";
-      echo saveUserInfo($fullname, $phone, $email, $location, $password, $photourl);
-    }else{
-      $res = saveUserPhoto();
-      if($res['success']){
-        $tagetdir = $res['message'];
-        $photourl = getServerHost()."/attareeq/api/".$tagetdir;
-        echo saveUserInfo($fullname, $phone, $email, $location, $password, $photourl);
-      }else{
-        echo outputInJSON(false, $res['message']);
-      }
-    }
+    echo updateAdminMosque($userid, $mosquename, $mosquelocation);
   }
 
-  function saveUserInfo( $fullname, $phone, $email, $location, $password, $photourl ){
+  function updateAdminMosque($userid, $mosquename, $mosquelocation){
     try{
       global $dbh;
-      $password = password_hash($password, PASSWORD_DEFAULT);
-      $cArray = array('fullname'=>$fullname, 'displayname'=>$fullname, 'phone'=>$phone, 'email'=>$email, 'location'=>$location, 'password'=>$password, 'photourl'=>$photourl);
-      $wArray = '';
-      $lastId = $dbh->insert('tblusers', $cArray, $wArray)->getLastInsertId();
-      if($lastId > 0){
-
-        $res = saveUserRole('1',  $lastId);
-        if ($res['success']) {
-          return outputInJSON(true, "User account successfully created");
-        }else{
-          return outputInJSON(false, $res['message']);
-        }
-
+      $cArray = array('mosquename'=>$mosquename, 'location'=>$mosquelocation);
+      $wArray = array('registeredby'=>$userid);
+      $rs = $dbh->update('tblmosque', $cArray, $wArray)->affectedRows();
+      if($rs > 0){
+        return outputInJSON(true, "Major profile successfully updated");
       }else{
-        return outputInJSON(false, "Error. User account not created");
+        return outputInJSON(false, "Error. Major profile not updated");
       }
     } catch (Exception $e) {
       return outputInJSON(false, "Error. Please try again");;

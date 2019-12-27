@@ -5,82 +5,45 @@
   //echo var_dump($_POST)."==========".var_dump($_FILES);
 
   $fullname = cleanInput($_POST['fullname']);
-  $phone = cleanInput($_POST['phone']);
-  $email = cleanInput($_POST['email']);
-  $location = cleanInput($_POST['location']);
-  $password = cleanInput($_POST['password']);
-  $cpassword = cleanInput($_POST['cpassword']);
+  $displayname = cleanInput($_POST['displayname']);
+  $userid = cleanInput($_POST['userid']);
   
-  if ($fullname === "" ||
-      $phone === "" ||
-      $password === "" ||
-      $password === "" ||
-      $cpassword === ""
-  ){
+  if ($fullname === "" || $displayname === ""){
     echo outputInJSON(false, "Please enter all required fields");
-  } else if ($password !== $cpassword) {
-    echo outputInJSON(false, "Password and confirm password do not match");
-  } else if ($email !== "" && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo outputInJSON(false, "Please enter a valid email address");
   } else {
     if (isset($_POST['photo'])){
       $photourl = getServerHost()."/attareeq/api/uploads/default.jpg";
-      echo saveUserInfo($fullname, $phone, $email, $location, $password, $photourl);
+      echo updateUserInfo($userid, $fullname, $displayname, $photourl);
     }else{
-      $res = saveUserPhoto();
+      $res = updateUserPhoto();
       if($res['success']){
         $tagetdir = $res['message'];
         $photourl = getServerHost()."/attareeq/api/".$tagetdir;
-        echo saveUserInfo($fullname, $phone, $email, $location, $password, $photourl);
+        echo updateUserInfo($userid, $fullname, $displayname, $photourl);
       }else{
         echo outputInJSON(false, $res['message']);
       }
     }
   }
 
-  function saveUserInfo( $fullname, $phone, $email, $location, $password, $photourl ){
+  function updateUserInfo($userid, $fullname, $displayname, $photourl ){
     try{
       global $dbh;
-      $password = password_hash($password, PASSWORD_DEFAULT);
-      $cArray = array('fullname'=>$fullname, 'displayname'=>$fullname, 'phone'=>$phone, 'email'=>$email, 'location'=>$location, 'password'=>$password, 'photourl'=>$photourl);
-      $wArray = '';
-      $lastId = $dbh->insert('tblusers', $cArray, $wArray)->getLastInsertId();
-      if($lastId > 0){
-
-        $res = saveUserRole('1',  $lastId);
-        if ($res['success']) {
-          return outputInJSON(true, "User account successfully created");
-        }else{
-          return outputInJSON(false, $res['message']);
-        }
-
+      $cArray = array('fullname'=>$fullname, 'displayname'=>$displayname, 'photourl'=>$photourl);
+      $wArray = array('userid'=>$userid);
+      $rs = $dbh->update('tblusers', $cArray, $wArray)->affectedRows();
+      if($rs > 0){
+        return outputInJSON(true, "User account successfully updated");
       }else{
-        return outputInJSON(false, "Error. User account not created");
+        return outputInJSON(false, "Error. User account not updated");
       }
     } catch (Exception $e) {
       return outputInJSON(false, "Error. Please try again");;
       //return $e->getMessage();
     }
   }
-
-  function saveUserRole($roleid, $userid){
-    try{
-      global $dbh;
-      $cArray = array('roleid'=>$roleid, 'userid'=>$userid);
-      $wArray = '';
-      $lastId = $dbh->insert('tbluserrole', $cArray, $wArray)->getLastInsertId();
-      if($lastId > 0){
-        return outputInArray(true, "User role added");
-      }else{
-        return outputInArray(false, "Error. User role not added");
-      }
-    } catch (Exception $e) {
-      return outputInArray(false, "Error. Please try again");;
-      //return $e->getMessage();
-    }
-  }
-
-  function saveUserPhoto(){
+  
+  function updateUserPhoto(){
     $target_dir = "uploads/";
     $target_file = $target_dir . basename($_FILES["photo"]["name"]);
     $uploadOk = 1;

@@ -25,7 +25,7 @@
 		return array('success'=>$status, 'message'=>$message);
 	}
 	
-	function validateLogin($username, $password)
+	function validateLogin2($username, $password)
 	{
 		try {
 			$query = "SELECT * 
@@ -36,6 +36,29 @@
 			$count = count($rs);
 
 			if($count === 1){
+				return outputInArray(true, $rs);
+			}else{
+				return outputInArray(false, "Invalid login credentials");
+			}
+			
+		} catch (Exception $e) {
+			resultInJSON(false, "Error. Please try again");
+			//return $e->getMessage();
+		}
+	}
+
+	function validateLogin($username, $password)
+	{
+		try {
+			$query = "SELECT * 
+								FROM tblusers 
+								WHERE (phone ='".$username."' OR email ='".$username."')
+							";
+			global $dbh;
+			$rs = $dbh->pdoQuery($query)->results();
+			$count = count($rs);
+
+			if($count === 1 && password_verify($password, $rs[0]['password'])){
 				return outputInArray(true, $rs);
 			}else{
 				return outputInArray(false, "Invalid login credentials");

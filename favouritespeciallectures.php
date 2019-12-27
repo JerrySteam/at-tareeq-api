@@ -3,13 +3,16 @@
   require_once('core/helperfunctions.php');
   
   try {
+    $json = json_decode(file_get_contents('php://input'), true);
+    $userid = $json['userid'];
+
     $query = "SELECT * 
               FROM tblfavouritelectures as fl 
               INNER JOIN tbllectures as l 
               INNER JOIN tbllecturedaytime as ld 
               ON fl.lectureid = l.lectureid 
               AND l.lectureid = ld.lectureid 
-              WHERE fl.userid = '2'
+              WHERE fl.userid = '$userid'
               AND l.categoryid = '2'
               AND str_to_date(ld.dayordate, '%d/%m/%Y') >= CURDATE()
               ORDER BY str_to_date(ld.dayordate, '%d/%m/%Y') ASC";
