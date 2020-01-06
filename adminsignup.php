@@ -28,7 +28,7 @@
     echo outputInJSON(false, "Please enter a valid email address");
   } else {
     if (isset($_POST['photo'])){
-      $photourl = getServerHost()."/attareeq/api/uploads/default.jpg";
+      $photourl = getServerHost()."/attareeq/api/uploads/users/default.jpg";
       echo saveUserInfo($fullname, $phone, $email, $location, $password, $photourl, $mosquename, $mosquecat);
     }else{
       $res = saveUserPhoto();
@@ -88,7 +88,7 @@
   }
 
   function saveUserPhoto(){
-    $target_dir = "uploads/";
+    $target_dir = "uploads/users/";
     $target_file = $target_dir . basename($_FILES["photo"]["name"]);
     $uploadOk = 1;
     $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));

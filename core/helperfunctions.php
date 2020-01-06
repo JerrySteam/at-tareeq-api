@@ -2,9 +2,11 @@
 	require_once('dbconnect.php');
 	$dbh = try_db_connect(true);
 
+
 	function getServerHost(){
 		return "http://".$_SERVER['HTTP_HOST'];
 	}
+
   function cleanInput($data)
 	{
 		$data = trim($data);
@@ -13,6 +15,13 @@
 		$data = addslashes($data);
 
 		return $data;
+	}
+
+	function generateUniqueRef($prefix="")
+	{
+		$random = time() . rand(10*45, 100*98);
+		$ref = $prefix."".$random;
+		return $ref;
 	}
 
 	function outputInJSON($status=false, $message='')
