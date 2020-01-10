@@ -9,6 +9,8 @@
   $date = cleanInput($_POST['date']);
   $time = cleanInput($_POST['time']);
   $briefinfo = cleanInput($_POST['briefinfo']);
+  $latitude = cleanInput($_POST['latitude']);
+  $longitude = cleanInput($_POST['longitude']);
   
   if ($title === "" ||
       $speaker === "" ||
@@ -20,29 +22,36 @@
   } else {
     if (isset($_POST['photo'])){
       $photourl = getServerHost()."/attareeq/api/uploads/speakers/default.jpg";
-      echo saveLectureInfo($userid, $title, $speaker, $location, $date, $time, $briefinfo, $photourl);
+      echo saveLectureInfo($userid, $title, $speaker, $location, $date, $time, $briefinfo, $latitude, $longitude, $photourl);
     }else{
       $res = saveSpeakerPhoto();
       if($res['success']){
         $tagetdir = $res['message'];
         $photourl = getServerHost()."/attareeq/api/".$tagetdir;
-        echo saveLectureInfo($userid, $title, $speaker, $location, $date, $time, $briefinfo, $photourl);
+        echo saveLectureInfo($userid, $title, $speaker, $location, $date, $time, $briefinfo, $latitude, $longitude, $photourl);
       }else{
         echo outputInJSON(false, $res['message']);
       }
     }
   }
 
-  function saveLectureInfo($userid, $title, $speaker, $location, $date, $time, $briefinfo, $photourl){
+  function saveLectureInfo($userid, $title, $speaker, $location, $date, $time, $briefinfo, $latitude, $longitude, $photourl){
     $categoryid = 2;
     try{
       global $dbh;
-      $cArray = array('categoryid'=>$categoryid, 'topic'=>$title, 'speaker'=>$speaker, 'location'=>$location, 'briefinfo'=>$briefinfo, 'speakerphotourl'=>$photourl, 'createdby'=>$userid);
+      $cArray = array('categoryid'=>$categoryid, 'topic'=>$title, 'speaker'=>$speaker, 'location'=>$location, 'briefinfo'=>$briefinfo, 'latitude'=>$latitude, 'longitude'=>$longitude, 'speakerphotourl'=>$photourl, 'createdby'=>$userid);
       $wArray = '';
-      $lastId = $dbh->insert('tbllectures', $cArray, $wArray)->getLastInsertId();
-      if($lastId > 0){
-        $res = saveLectureDayTime($lastId, $date, $time);
+      $lectureid = $dbh->insert('tbllectures', $cArray, $wArray)->getLastInsertId();
+      if($lectureid > 0){
+        $res = saveLectureDayTime($lectureid, $date, $time);
         if ($res['success']) {
+
+          $nid = "1";
+          $users = getUsersToNotify($nid);
+          if($users['success']){
+            $res2 = saveLectureNotification($lectureid, $users['message']);
+          }
+
           return outputInJSON(true, "Special lecture successfully posted");
         }else{
           return outputInJSON(false, $res['message']);
@@ -108,6 +117,49 @@
         $msg = "Sorry, there was an error uploading your file.";
         return outputInArray(false, $msg);
       }
+    }
+  }
+
+  function getUsersToNotify($nid){
+    try {
+      $query = "SELECT userid 
+                FROM tblusernotification
+                WHERE notificationid = '$nid'";
+      global $dbh;
+      $rs = $dbh->pdoQuery($query)->results();
+      $count = count($rs);
+  
+      if($count > 0){
+        return outputInArray(true, $rs);
+      }else{
+        return outputInArray(false, "User has no notification");
+      }
+      
+    } catch (Exception $e) {
+      return outputInArray(false, "Error. Please try again");
+      //return $e->getMessage();
+    }
+  }
+
+  function saveLectureNotification($lectureid, $users){
+    try{
+      global $dbh;
+      $count = 0;
+      foreach ($users as $user) { 
+        $cArray = array('lectureid'=>$lectureid, 'userid'=>$user['userid']);
+        $wArray = '';
+        $lastId = $dbh->insert('tbluserlecturenotification', $cArray, $wArray)->getLastInsertId();
+        $count++;
+      }
+
+      if($count === count($users)){
+        return outputInArray(true, "Users lecture notification saved");
+      }else{
+        return outputInArray(false, "Error. Users lecture notification not saved");
+      }
+    } catch (Exception $e) {
+      return outputInArray(false, "Error. Please try again");;
+      //return $e->getMessage();
     }
   }
 ?>

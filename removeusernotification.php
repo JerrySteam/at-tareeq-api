@@ -14,6 +14,9 @@
     $rs = $dbh->delete('tblusernotification', $wArray)->affectedRows();
 
     if($rs > 0){
+      $dcArray = '';
+      $dwArray = array('userid'=>$userid, 'status'=>'0');
+      $drs = $dbh->delete('tbluserlecturenotification', $dwArray)->affectedRows();
       echo outputInJSON(true, "Lecture notification removed!");
     }else{
       echo outputInJSON(false, "Error. Lecture notification not removed");
