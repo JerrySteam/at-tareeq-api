@@ -16,7 +16,7 @@
       $speaker === "" ||
       $location === "" ||
       $date === "" ||
-      $time === ""
+      $time === null
   ){
     echo outputInJSON(false, "Please enter all required fields");
   } else {

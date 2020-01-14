@@ -60,8 +60,11 @@
 	{
 		try {
 			$query = "SELECT * 
-								FROM tblusers 
-								WHERE (phone ='".$username."' OR email ='".$username."')
+								FROM tblusers AS u
+								INNER JOIN tbluserrole AS ur
+								ON u.userid = ur.userid
+								WHERE (u.phone ='".$username."' OR u.email ='".$username."') 
+									AND u.status = '1'
 							";
 			global $dbh;
 			$rs = $dbh->pdoQuery($query)->results();
@@ -79,4 +82,77 @@
 		}
 	}
 
+	function encryption($str){
+		$ciphering = "BF-CBC"; 
+		$iv_length = openssl_cipher_iv_length($ciphering); 
+		$options = 0; 
+		$encryption_iv = random_bytes($iv_length); 
+		$encryption_key = openssl_digest(php_uname(), 'MD5', TRUE); 
+		$encryption = openssl_encrypt($str, $ciphering, $encryption_key, $options, $encryption_iv); 
+		return $encryption;
+	}
+
+	function decryption($str){
+		$ciphering = "BF-CBC"; 
+		$iv_length = openssl_cipher_iv_length($ciphering); 
+		$options = 0; 
+		$decryption_iv = random_bytes($iv_length); 
+		$decryption_key = openssl_digest(php_uname(), 'MD5', TRUE); 
+		$decryption = openssl_decrypt ($str, $ciphering, $decryption_key, $options, $decryption_iv); 
+
+		return $decryption;
+	}
+
+	function sendemail($fullname, $email, $token){
+		$firstname = explode(" ", $fullname)[0];
+		$token = encryption($token);
+    $link = "http://hochenmu.ng/accountconfirmation.php?c=".$email."&k=".$token;
+
+    $to = $email;
+    $subject = "At-tareeq Account Confirmation";
+    $msg = "Hi ".$firstname.", \n\nThank you for signing up on At-tareeq App. Kindly click on the link below to confirm your account :\n".$link;
+    $msg = wordwrap($msg,70);
+    $headers = "From: info@hochenmu.ng";
+    mail($to, $subject, $msg, $headers);
+  }
+
+	function phoneExist($phone){
+		try {
+			$query = "SELECT * FROM tblusers WHERE phone = '$phone'";
+			global $dbh;
+			$rs = $dbh->pdoQuery($query)->results();
+			$count = count($rs);
+
+			if($count > 0){
+				return true;
+			}else{
+				return false;
+			}
+			
+		} catch (Exception $e) {
+			return true;
+			//return $e->getMessage();
+		}
+	}
+
+	function emailExist($email){
+		try {
+			$query = "SELECT * FROM tblusers WHERE email = '$email'";
+			global $dbh;
+			$rs = $dbh->pdoQuery($query)->results();
+			$count = count($rs);
+
+			if($count > 0){
+				return true;
+			}else{
+				return false;
+			}
+			
+		} catch (Exception $e) {
+			return true;
+			//return $e->getMessage();
+		}
+	}
+
+	
 ?>

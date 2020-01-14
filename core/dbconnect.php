@@ -10,11 +10,15 @@
 			if ($dbh != null) {
 				return $dbh;
 			}
-		
+			/*
 			$db_host		= 'localhost';
 			$db_user		= 'root';
 			$db_pass		= '';
-			$db_database	= 'attareeqdb';
+			$db_database	= 'attareeqdb';*/
+			$db_host		= 'localhost';
+			$db_user		= 'hochbfld_attareeq';
+			$db_pass		= '[Vt!y+@$Y&IB';
+			$db_database	= 'hochbfld_attareeq';
 	
 			$pdo_hlp = 'pdo/class/class.pdohelper.php';
 			include_once($pdo_hlp);

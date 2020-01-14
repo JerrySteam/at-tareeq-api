@@ -15,6 +15,7 @@
   
   if ($fullname === "" ||
       $phone === "" ||
+      $email === "" ||
       $location === "" ||
       $password === "" ||
       $cpassword === "" ||
@@ -22,10 +23,14 @@
       $mosquecat === ""
   ){
     echo outputInJSON(false, "Please enter all required fields");
+  } else if (phoneExist($phone)) {
+    echo outputInJSON(false, "An account already exist with the phone number you provided");
+  } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo outputInJSON(false, "Please enter a valid email address");
+  } else if (emailExist($email)) {
+    echo outputInJSON(false, "An account already exist with the email you provided");
   } else if ($password !== $cpassword) {
     echo outputInJSON(false, "Password and confirm password do not match");
-  } else if ($email !== "" && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo outputInJSON(false, "Please enter a valid email address");
   } else {
     if (isset($_POST['photo'])){
       $photourl = getServerHost()."/attareeq/api/uploads/users/default.jpg";
@@ -45,8 +50,9 @@
   function saveUserInfo( $fullname, $phone, $email, $location, $password, $photourl, $mosquename, $mosquecat ){
     try{
       global $dbh;
+      $token = generateUniqueRef();
       $password = password_hash($password, PASSWORD_DEFAULT);
-      $cArray = array('fullname'=>$fullname, 'displayname'=>$fullname, 'phone'=>$phone, 'email'=>$email, 'location'=>$location, 'password'=>$password, 'photourl'=>$photourl);
+      $cArray = array('fullname'=>$fullname, 'displayname'=>$fullname, 'phone'=>$phone, 'email'=>$email, 'location'=>$location, 'password'=>$password, 'photourl'=>$photourl, 'token'=>$token);
       $wArray = '';
       $lastId = $dbh->insert('tblusers', $cArray, $wArray)->getLastInsertId();
       if($lastId > 0){
@@ -54,7 +60,10 @@
         if ($res['success']) {
           $resMosque = saveMosque($mosquename, $mosquecat, $location, $lastId);
           if ($resMosque['success']) {
-            return outputInJSON(true, "Admin and Mosque account successfully created");
+
+            sendemail($fullname, $email, $token);
+            return outputInJSON(true, "Admin account successfully created. A confirmation mail has been sent to ".$email);
+            
           }else{
             return outputInJSON(false, $resMosque['message']);
           }

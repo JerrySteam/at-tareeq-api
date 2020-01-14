@@ -13,15 +13,20 @@
   
   if ($fullname === "" ||
       $phone === "" ||
+      $email === "" ||
       $password === "" ||
       $password === "" ||
       $cpassword === ""
   ){
     echo outputInJSON(false, "Please enter all required fields");
+  } else if (phoneExist($phone)) {
+    echo outputInJSON(false, "An account already exist with the phone number you provided");
+  } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo outputInJSON(false, "Please enter a valid email address");
+  } else if (emailExist($email)) {
+    echo outputInJSON(false, "An account already exist with the email you provided");
   } else if ($password !== $cpassword) {
     echo outputInJSON(false, "Password and confirm password do not match");
-  } else if ($email !== "" && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo outputInJSON(false, "Please enter a valid email address");
   } else {
     if (isset($_POST['photo'])){
       $photourl = getServerHost()."/attareeq/api/uploads/users/default.jpg";
@@ -41,15 +46,17 @@
   function saveUserInfo( $fullname, $phone, $email, $location, $password, $photourl ){
     try{
       global $dbh;
+      $token = generateUniqueRef();
       $password = password_hash($password, PASSWORD_DEFAULT);
-      $cArray = array('fullname'=>$fullname, 'displayname'=>$fullname, 'phone'=>$phone, 'email'=>$email, 'location'=>$location, 'password'=>$password, 'photourl'=>$photourl);
+      $cArray = array('fullname'=>$fullname, 'displayname'=>$fullname, 'phone'=>$phone, 'email'=>$email, 'location'=>$location, 'password'=>$password, 'photourl'=>$photourl, 'token'=>$token);
       $wArray = '';
       $lastId = $dbh->insert('tblusers', $cArray, $wArray)->getLastInsertId();
       if($lastId > 0){
 
         $res = saveUserRole('1',  $lastId);
         if ($res['success']) {
-          return outputInJSON(true, "User account successfully created");
+          sendemail($fullname, $email, $token);
+          return outputInJSON(true, "User account successfully created. A confirmation mail has been sent to ".$email);
         }else{
           return outputInJSON(false, $res['message']);
         }
@@ -117,4 +124,5 @@
       }
     }
   }
+  
 ?>
